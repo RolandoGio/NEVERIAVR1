@@ -1,0 +1,32 @@
+promos:
+  - id: "PR-COMBO-PALETAS-CONITO"
+    name: "Paleta choco + paleta limón → Cono gratis"
+    type: "combo_gift"
+    enabled: true
+    priority: 5          # 👈 corre primero
+    combinable: true
+    requires:
+      - { sku: "PALETA_CHOCO", qty: 1 }
+      - { sku: "PALETA_LIMON", qty: 1 }
+    gift: { sku: "CONO", name: "Cono", qty: 1 }
+    maxPerTicket: 2
+
+  - id: "PR-2x1-BOLITAS"
+    name: "Promo 2 bolitas + 1 gratis"
+    type: "bogo"
+    enabled: true
+    priority: 10         # 👈 corre después y bloquea lo demás
+    combinable: false
+    matchTag: "bolita"
+    buyQty: 2
+    getQty: 1
+    uniquePerTicket: true
+
+  - id: "PR-10PCT-BOLITA"
+    name: "Bolitas -10%"
+    type: "percent"
+    enabled: true
+    priority: 15
+    combinable: true
+    matchTag: "bolita"
+    percent: 10

@@ -1,0 +1,35 @@
+{
+  "name": "heladeria-local-first",
+  "private": true,
+  "version": "0.0.1",
+  "main": "app/electron/main.js",
+  "type": "module",
+  "scripts": {
+    "postinstall": "prisma generate",
+    "dev": "concurrently -k \"cross-env BROWSER=none vite\" \"wait-on tcp:5173 && electron .\"",
+    "build:ui": "vite build",
+    "build": "vite build",
+    "seed": "node app/scripts/seed.mjs"
+  },
+  "prisma": {
+    "seed": "node app/scripts/seed.mjs"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.2.0",
+    "prisma": "^5.22.0",
+    "vite": "^5.4.0",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

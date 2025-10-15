@@ -1,0 +1,13 @@
+{
+  "stocks": {
+    "min_default": 5,
+    "zero_block": true
+  },
+  "ranges": {
+    "bolitas_min": 130,
+    "bolitas_max": 150
+  },
+  "report": {
+    "output_dir": "reports"
+  }
+}

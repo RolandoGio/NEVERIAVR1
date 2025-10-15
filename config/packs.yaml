@@ -1,0 +1,4 @@
+﻿packs:
+  - from: CN-360
+    to:   CONO
+    factor: 360

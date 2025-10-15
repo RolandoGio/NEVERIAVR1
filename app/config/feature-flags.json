@@ -1,0 +1,19 @@
+{
+  "sales": {
+    "double_confirm": false,
+    "comment_required_on_void": true,
+    "cashier_cancel_window_minutes": 5
+  },
+  "purchaseOrders": {
+    "double_confirm": true,
+    "edit_window_hours": 24
+  },
+  "inventory": {
+    "double_confirm_adjust": true,
+    "comment_required_adjust": true
+  },
+  "tech": {
+    "min_days_to_close_icecream": 30,
+    "topping_max_uses_default": 120
+  }
+}

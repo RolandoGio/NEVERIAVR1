@@ -1,0 +1,328 @@
+// ===============================
+// Datasource & Generator
+// ===============================
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ===============================
+// Autenticación y Configuración
+// ===============================
+model User {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  name         String
+  role         String // 'CAJERO' | 'ADMIN' | 'SUPERSU'
+  passwordHash String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions   Session[]
+  receipts   Receipt[]   @relation("ReceiptCreatedBy")
+  stockMoves StockMove[] @relation("StockMoveByUser")
+  auditLogs  AuditLog[]  @relation("AuditByUser")
+  sales      Sale[]      @relation("SaleByUser")
+}
+
+model Session {
+  id        String   @id
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
+model ConfigKV {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// ===============================
+// Catálogo Maestro
+// ===============================
+model Category {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  categoryId   Int
+  category     Category @relation(fields: [categoryId], references: [id])
+  supplierCode String   @unique
+  name         String
+  controlType  String               // 'venta_directa' | 'unitario' | 'tecnico_helado' | 'tecnico_topping'
+  unitName     String?
+  isActive     Boolean  @default(true)
+  isSellable   Boolean  @default(true) // bloquea venta en POS si false
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Conversión persistente (packs → unidades)
+  conversionFactor    Int?     // ej. 360 (unidades por pack)
+  conversionTargetSku String?  // ej. "CONO" (SKU destino en unidades)
+
+  presentations Presentation[]
+
+  // Relaciones operativas
+  receiptItems ReceiptItem[] @relation("ProductReceiptItems")
+  stockMoves   StockMove[]   @relation("ProductStockMoves")
+  lots         Lot[]
+
+  // Fase 3: descargas técnicas
+  techOpens TechOpen[]
+
+  @@index([controlType])
+  @@index([categoryId])
+}
+
+model Presentation {
+  id             Int      @id @default(autoincrement())
+  productId      Int
+  product        Product  @relation(fields: [productId], references: [id])
+  name           String
+  unitsPerPack   Int?
+  bolitasMin     Int?
+  bolitasMax     Int?
+  toppingMaxUses Int?
+  isDefault      Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  receiptItems ReceiptItem[] @relation("PresentationReceiptItems")
+  techOpens    TechOpen[]
+
+  @@index([productId])
+}
+
+// ===============================
+// Recepciones (Pedidos de proveedor)
+// ===============================
+model Receipt {
+  id              Int      @id @default(autoincrement())
+  code            String   @unique
+  userCode        String
+  user            User     @relation("ReceiptCreatedBy", fields: [userCode], references: [code])
+  status          String   @default("OPEN") // 'OPEN' | 'LOCKED'
+  comment         String?
+  editableUntil   DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastEditedBy    String?
+  lastEditComment String?
+
+  items     ReceiptItem[]
+  auditLogs AuditLog[]    @relation("ReceiptLogs")
+
+  @@index([status, editableUntil])
+}
+
+model ReceiptItem {
+  id             Int      @id @default(autoincrement())
+  receiptId      Int
+  productId      Int
+  presentationId Int?
+  packs          Int
+  unitsPerPack   Int      @default(1)
+  unitsTotal     Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  receipt      Receipt       @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product      Product       @relation("ProductReceiptItems", fields: [productId], references: [id])
+  presentation Presentation? @relation("PresentationReceiptItems", fields: [presentationId], references: [id])
+
+  stockMoves StockMove[]
+  lot        Lot?
+}
+
+// ===============================
+// Lotes internos (1:1 con ReceiptItem)
+// ===============================
+model Lot {
+  id            Int         @id @default(autoincrement())
+  code          String      @unique
+  productId     Int
+  product       Product     @relation(fields: [productId], references: [id])
+  receiptItemId Int         @unique
+  receiptItem   ReceiptItem @relation(fields: [receiptItemId], references: [id], onDelete: Cascade)
+  qtyTotal      Int
+  qtyUsed       Int         @default(0)
+  status        String      @default("OPEN") // OPEN | CLOSED
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  stockMoves StockMove[]
+  techOpens  TechOpen[]
+
+  @@index([productId])
+}
+
+// ===============================
+// Movimientos de inventario y auditoría
+// ===============================
+model StockMove {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  kind          String
+  qty           Int
+  userCode      String?
+  note          String?
+  receiptItemId Int?
+  lotId         Int?
+  createdAt     DateTime @default(now())
+
+  product     Product      @relation("ProductStockMoves", fields: [productId], references: [id])
+  receiptItem ReceiptItem? @relation(fields: [receiptItemId], references: [id], onDelete: SetNull)
+  lot         Lot?         @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  user        User?        @relation("StockMoveByUser", fields: [userCode], references: [code], onDelete: SetNull)
+
+  @@index([productId, createdAt])
+  @@index([lotId])
+}
+
+model AuditLog {
+  id       Int     @id @default(autoincrement())
+  userCode String?
+  user     User?   @relation("AuditByUser", fields: [userCode], references: [code], onDelete: SetNull)
+
+  module  String
+  action  String
+  before  String?
+  after   String?
+  comment String?
+
+  // enlace opcional a una recepción
+  receiptId Int?
+  receipt   Receipt? @relation("ReceiptLogs", fields: [receiptId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([module, createdAt])
+  @@index([receiptId])
+}
+
+// ===============================
+// Descargas técnicas (Fase 3)
+// ===============================
+model TechOpen {
+  id             Int           @id @default(autoincrement())
+  productId      Int
+  product        Product       @relation(fields: [productId], references: [id])
+  presentationId Int?
+  presentation   Presentation? @relation(fields: [presentationId], references: [id])
+  lotId          Int?
+  lot            Lot?          @relation(fields: [lotId], references: [id], onDelete: SetNull)
+
+  /// 'ICECREAM' | 'TOPPING'
+  kind   String
+  /// 'OPEN' | 'CLOSED'
+  status String @default("OPEN")
+
+  openedBy    String
+  openedAt    DateTime @default(now())
+  commentOpen String?
+
+  /// contador acumulado (bolitas o usos)
+  counter Int @default(0)
+
+  closedBy     String?
+  closedAt     DateTime?
+  commentClose String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  counterLogs TechCounterLog[]
+
+  @@index([productId, status, kind])
+  @@index([lotId])
+}
+
+model TechCounterLog {
+  id         Int      @id @default(autoincrement())
+  techOpenId Int
+  techOpen   TechOpen @relation(fields: [techOpenId], references: [id], onDelete: Cascade)
+  delta      Int
+  userCode   String
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@index([techOpenId, createdAt])
+}
+
+// ===============================
+// Ventas (centavos, code único, JSON serializado como String)
+// ===============================
+model Sale {
+  id            Int       @id @default(autoincrement())
+  code          String    @unique
+  createdAt     DateTime  @default(now())
+
+  userCode      String
+  user          User      @relation("SaleByUser", fields: [userCode], references: [code])
+
+  totalGross    Int       @default(0)  // suma sin descuentos (centavos)
+  totalDiscount Int       @default(0)  // descuentos totales (centavos)
+  totalNet      Int       @default(0)  // total a cobrar (centavos)
+  currency      String    @default("MXN")
+
+  lines         SaleLine[]
+  promos        SalePromo[]
+
+  @@index([createdAt])
+  @@index([userCode, createdAt])
+}
+
+model SaleLine {
+  id         Int      @id @default(autoincrement())
+  saleId     Int
+  sale       Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  productId  Int?
+  sku        String
+  name       String
+
+  qty        Int      @default(1)
+  unitPrice  Int      @default(0)   // centavos
+  isGift     Boolean  @default(false)
+
+  // JSON serializado (SQLite no tiene tipo Json nativo)
+  tagsJson   String?
+
+  createdAt  DateTime @default(now())
+
+  @@index([saleId])
+}
+
+model SalePromo {
+  id        Int      @id @default(autoincrement())
+  saleId    Int
+  sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  ruleId    String   // ej. "PR-COMBO-PALETAS-CONITO"
+  name      String
+  amount    Int      @default(0)    // centavos; 0 si solo hubo regalos
+
+  // JSON serializado con detalles de la regla aplicada
+  metaJson  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([saleId])
+}

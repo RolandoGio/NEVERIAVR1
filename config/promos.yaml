@@ -1,0 +1,10 @@
+﻿promos:
+  - id: PR-COMBO-PALETAS-CONITO
+    name: Combo paletas → 1 cono gratis
+    type: combo_gift
+    requires:
+      - { sku: PALETA_CHOCO, qty: 1 }
+      - { sku: PALETA_LIMON, qty: 1 }
+    gift: { sku: CONO, name: Cono, qty: 1 }
+    priority: 100
+    combinable: true
