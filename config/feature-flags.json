@@ -1,0 +1,15 @@
+{
+  "sales": {
+    "double_confirm": false,
+    "comment_required_on_void": true,
+    "cashier_cancel_window_minutes": 5
+  },
+  "purchaseOrders": {
+    "double_confirm": true,
+    "edit_window_hours": 24
+  },
+  "inventory": {
+    "double_confirm_adjust": true,
+    "comment_required_adjust": true
+  }
+}

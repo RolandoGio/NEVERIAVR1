@@ -1,4 +1,140 @@
 :root { color-scheme: light dark; }
-body { margin: 0; background: #0b1220; color: #e5eefc; }
-h1 { margin: 0 0 12px; }
-pre { overflow: auto; }
+body {
+  margin: 0;
+  background: #0b1220;
+  color: #e5eefc;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+h1 {
+  margin: 0 0 12px;
+}
+
+pre {
+  overflow: auto;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+button {
+  background: #4f83ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button:hover {
+  background: #79a1ff;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(4, 9, 20, 0.6);
+  color: inherit;
+  margin-top: 4px;
+}
+
+.module {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.module__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.list__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+}
+
+.list__item small {
+  opacity: 0.7;
+}
+
+.cart-line {
+  display: grid;
+  grid-template-columns: 1fr 120px 40px;
+  gap: 8px;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.totals p,
+.applied ul {
+  margin: 0;
+}
+
+.applied ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+
+.result {
+  max-height: 180px;
+}
+
+.error {
+  padding: 12px;
+  background: rgba(255, 87, 102, 0.2);
+  border-radius: 8px;
+}
+
+.success {
+  padding: 12px;
+  background: rgba(76, 210, 141, 0.2);
+  border-radius: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  text-align: left;
+}

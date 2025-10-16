@@ -46,6 +46,19 @@ model ConfigKV {
   updatedAt DateTime @updatedAt
 }
 
+model ConfigOverride {
+  id        Int      @id @default(autoincrement())
+  key       String
+  scope     String?
+  value     String
+  comment   String?
+  createdBy String
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+
+  @@index([key, scope])
+}
+
 // ===============================
 // Catálogo Maestro
 // ===============================
@@ -215,6 +228,46 @@ model AuditLog {
 
   @@index([module, createdAt])
   @@index([receiptId])
+}
+
+model ProposedProduct {
+  id           Int      @id @default(autoincrement())
+  supplierCode String
+  name         String
+  status       String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  requestedBy  String
+  requestedAt  DateTime @default(now())
+  resolvedBy   String?
+  resolvedAt   DateTime?
+  comment      String?
+  payload      String?
+
+  @@unique([supplierCode, status], name: "proposed_active_supplier")
+  @@index([status, requestedAt])
+}
+
+model ReportJob {
+  id          Int      @id @default(autoincrement())
+  kind        String
+  status      String   @default("pending") // pending | processing | done | error
+  payload     String?
+  resultPath  String?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  processedAt DateTime?
+}
+
+model TelegramQueueItem {
+  id         Int      @id @default(autoincrement())
+  chatId     String
+  document   String
+  caption    String?
+  status     String   @default("pending") // pending | sent | error
+  attempts   Int      @default(0)
+  lastError  String?
+  createdAt  DateTime @default(now())
+  sentAt     DateTime?
 }
 
 // ===============================

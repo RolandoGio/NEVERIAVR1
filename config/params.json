@@ -1,0 +1,15 @@
+{
+  "tech": {
+    "icecream_min_days": 30,
+    "topping_max_uses": {
+      "TOPPING_FRESA": 80,
+      "TOPPING_CHOCOLATE": 90
+    }
+  },
+  "inventory": {
+    "stock_minimum": {
+      "CONO": 50,
+      "VASO": 30
+    }
+  }
+}

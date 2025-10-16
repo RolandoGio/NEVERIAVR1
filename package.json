@@ -9,7 +9,9 @@
     "dev": "concurrently -k \"cross-env BROWSER=none vite\" \"wait-on tcp:5173 && electron .\"",
     "build:ui": "vite build",
     "build": "vite build",
-    "seed": "node app/scripts/seed.mjs"
+    "seed": "node app/scripts/seed.mjs",
+    "reports:generate": "node app/scripts/generateReports.mjs",
+    "reports:telegram": "node app/scripts/sendTelegramQueue.mjs"
   },
   "prisma": {
     "seed": "node app/scripts/seed.mjs"

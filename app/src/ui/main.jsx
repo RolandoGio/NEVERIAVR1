@@ -6,6 +6,10 @@ import LoginApp from "./LoginApp.jsx";       // default export
 import CatalogApp from "./CatalogApp.jsx";   // default export
 import ReceiptsApp from "./ReceiptsApp.jsx"; // default export
 import TechApp from "./TechApp.jsx";         // default export (aperturas técnicas)
+import SalesApp from "./SalesApp.jsx";
+import InventoryApp from "./InventoryApp.jsx";
+import LabApp from "./LabApp.jsx";
+import ReportsApp from "./ReportsApp.jsx";
 import "./style.css";
 
 const API = "http://localhost:8787";
@@ -25,7 +29,18 @@ async function fetchMe(token) {
   }
 }
 
-function Home({ user, onGotoCatalog, onGotoReceipts, onGotoTech, onLogout, onAudit }) {
+function Home({
+  user,
+  onGotoCatalog,
+  onGotoReceipts,
+  onGotoTech,
+  onGotoSales,
+  onGotoInventory,
+  onGotoLab,
+  onGotoReports,
+  onLogout,
+  onAudit,
+}) {
   return (
     <div style={{ padding: 24 }}>
       <h1>
@@ -45,10 +60,12 @@ function Home({ user, onGotoCatalog, onGotoReceipts, onGotoTech, onLogout, onAud
         )}
 
         {/* Recepciones: CAJERO, ADMIN y SUPERSU */}
-        {(user?.role === "CAJERO" ||
-          user?.role === "ADMIN" ||
-          user?.role === "SUPERSU") && (
-          <button onClick={onGotoReceipts}>Recepciones</button>
+        {(user?.role === "CAJERO" || user?.role === "ADMIN" || user?.role === "SUPERSU") && (
+          <>
+            <button onClick={onGotoReceipts}>Recepciones</button>
+            <button onClick={onGotoSales}>Ventas (POS)</button>
+            <button onClick={onGotoInventory}>Conversiones</button>
+          </>
         )}
 
         {/* Técnico (aperturas helado/toppings): CAJERO, ADMIN y SUPERSU */}
@@ -56,6 +73,13 @@ function Home({ user, onGotoCatalog, onGotoReceipts, onGotoTech, onLogout, onAud
           user?.role === "ADMIN" ||
           user?.role === "SUPERSU") && (
           <button onClick={onGotoTech}>Técnico (aperturas)</button>
+        )}
+
+        {(user?.role === "ADMIN" || user?.role === "SUPERSU") && (
+          <>
+            <button onClick={onGotoLab}>Laboratorio</button>
+            <button onClick={onGotoReports}>Reportes</button>
+          </>
         )}
 
         <button onClick={onLogout}>Cerrar sesión</button>
@@ -67,7 +91,7 @@ function Home({ user, onGotoCatalog, onGotoReceipts, onGotoTech, onLogout, onAud
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(null);
-  const [screen, setScreen] = useState("home"); // home | catalog | receipts | tech
+  const [screen, setScreen] = useState("home"); // home | catalog | receipts | tech | sales | inventory | lab | reports
   const [loading, setLoading] = useState(true);
 
   // Carga el usuario al arrancar o cuando cambie el token
@@ -139,12 +163,32 @@ function App() {
     return <TechApp onBack={() => setScreen("home")} />;
   }
 
+  if (screen === "sales") {
+    return <SalesApp token={token} onBack={() => setScreen("home")} />;
+  }
+
+  if (screen === "inventory") {
+    return <InventoryApp token={token} onBack={() => setScreen("home")} />;
+  }
+
+  if (screen === "lab") {
+    return <LabApp token={token} onBack={() => setScreen("home")} />;
+  }
+
+  if (screen === "reports") {
+    return <ReportsApp token={token} onBack={() => setScreen("home")} />;
+  }
+
   return (
     <Home
       user={user}
       onGotoCatalog={() => setScreen("catalog")}
       onGotoReceipts={() => setScreen("receipts")}
       onGotoTech={() => setScreen("tech")}
+      onGotoSales={() => setScreen("sales")}
+      onGotoInventory={() => setScreen("inventory")}
+      onGotoLab={() => setScreen("lab")}
+      onGotoReports={() => setScreen("reports")}
       onLogout={handleLogout}
       onAudit={auditTest}
     />

@@ -13,6 +13,8 @@ import { techRouter } from './api.tech.js'          // Aperturas técnicas (hela
 import { promosRouter } from './api.promos.js'       // Motor de promociones
 import { salesRouter } from './api.sales.js'         // Ventas (quote/commit/listados)
 import { inventoryRouter } from './api.inventory.js' // Inventario (packs→unidades, summary, packs.yaml, version)
+import { labRouter } from './api.lab.js'             // Feature flags, parámetros y alertas
+import { reportsRouter } from './api.reports.js'     // Reportes PDF y Telegram
 
 const prisma = new PrismaClient()
 
@@ -117,6 +119,12 @@ export function startApiServer(port = 8787) {
 
   // --- Inventario (antes que ventas por si hay rutas solapadas) ---
   app.use(inventoryRouter)
+
+  // --- Panel de laboratorio (flags/params) ---
+  app.use(labRouter)
+
+  // --- Reportes + Telegram ---
+  app.use(reportsRouter)
 
   // --- Ventas ---
   app.use(salesRouter)

@@ -732,4 +732,131 @@ receiptsRouter.get('/api/products/:id/lots', requireAuth, async (req, res) => {
   res.json(out)
 })
 
+// ───────── PROPUESTAS DE PRODUCTO ─────────
+receiptsRouter.get('/api/receipts/proposed-products', requireAuth, async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' })
+  const { status = 'PENDING' } = req.query
+  const items = await prisma.proposedProduct.findMany({
+    where: { status: String(status).toUpperCase() },
+    orderBy: { requestedAt: 'desc' },
+    take: 100,
+  })
+  res.json(items)
+})
+
+receiptsRouter.post('/api/receipts/proposed-products', requireAuth, async (req, res) => {
+  const user = req.user
+  const { supplierCode, name, payload, comment } = req.body || {}
+  if (!supplierCode || !name) {
+    return res.status(400).json({ error: 'supplierCode y name son requeridos' })
+  }
+
+  try {
+    const created = await prisma.proposedProduct.create({
+      data: {
+        supplierCode: String(supplierCode).trim().toUpperCase(),
+        name: String(name).trim(),
+        requestedBy: user.code,
+        payload: payload ? JSON.stringify(payload) : null,
+        comment: comment ? String(comment).trim() : null,
+      },
+    })
+    res.json(created)
+  } catch (e) {
+    res.status(400).json({ error: 'No se pudo registrar la propuesta', detail: String(e?.message || e) })
+  }
+})
+
+async function resolveProposal(id) {
+  const proposal = await prisma.proposedProduct.findUnique({ where: { id: Number(id) } })
+  if (!proposal) {
+    const err = new Error('Propuesta no encontrada')
+    err.status = 404
+    throw err
+  }
+  return proposal
+}
+
+function ensureAdminOrSU(user) {
+  if (!isAdminOrSU(user)) {
+    const err = new Error('Sin permiso')
+    err.status = 403
+    throw err
+  }
+}
+
+receiptsRouter.post('/api/receipts/proposed-products/:id/approve', requireAuth, async (req, res) => {
+  try {
+    ensureAdminOrSU(req.user)
+    const proposal = await resolveProposal(req.params.id)
+    if (proposal.status !== 'PENDING') {
+      return res.status(400).json({ error: 'La propuesta ya fue resuelta' })
+    }
+
+    const data = await prisma.proposedProduct.update({
+      where: { id: proposal.id },
+      data: {
+        status: 'APPROVED',
+        resolvedBy: req.user.code,
+        resolvedAt: new Date(),
+        comment: req.body?.comment ? String(req.body.comment).trim() : null,
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        userCode: req.user.code,
+        module: 'inventory.receipts',
+        action: 'proposed_product_approve',
+        before: JSON.stringify({ proposal }),
+        after: JSON.stringify({ proposalId: proposal.id, status: 'APPROVED' }),
+        comment: req.body?.comment ? String(req.body.comment).trim() : null,
+      },
+    })
+
+    res.json(data)
+  } catch (e) {
+    res.status(e?.status || 500).json({ error: e?.message || 'Error aprobando propuesta' })
+  }
+})
+
+receiptsRouter.post('/api/receipts/proposed-products/:id/reject', requireAuth, async (req, res) => {
+  try {
+    ensureAdminOrSU(req.user)
+    const proposal = await resolveProposal(req.params.id)
+    if (proposal.status !== 'PENDING') {
+      return res.status(400).json({ error: 'La propuesta ya fue resuelta' })
+    }
+
+    if (!req.body?.comment) {
+      return res.status(400).json({ error: 'Comentario obligatorio al rechazar' })
+    }
+
+    const data = await prisma.proposedProduct.update({
+      where: { id: proposal.id },
+      data: {
+        status: 'REJECTED',
+        resolvedBy: req.user.code,
+        resolvedAt: new Date(),
+        comment: String(req.body.comment).trim(),
+      },
+    })
+
+    await prisma.auditLog.create({
+      data: {
+        userCode: req.user.code,
+        module: 'inventory.receipts',
+        action: 'proposed_product_reject',
+        before: JSON.stringify({ proposal }),
+        after: JSON.stringify({ proposalId: proposal.id, status: 'REJECTED' }),
+        comment: String(req.body.comment).trim(),
+      },
+    })
+
+    res.json(data)
+  } catch (e) {
+    res.status(e?.status || 500).json({ error: e?.message || 'Error rechazando propuesta' })
+  }
+})
+
 export default receiptsRouter
